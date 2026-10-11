@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threat Vector | AI Social Engineering Detection & Awareness Platform</title>
+    <!-- Chart.js for Radar Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #F5F7FA;
+            --bg-secondary: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-card-hover: #F8FAFC;
+            --bg-surface-subtle: #F1F5F9;
+
+            --text-primary: #0F172A;
+            --text-secondary: #334155;
+            --text-muted: #64748B;
+
+            --brand-navy: #0F2744;
+            --brand-navy-hover: #1E3A8A;
+            --brand-blue: #2563EB;
+            --brand-teal: #0D9488;
+            --brand-teal-light: #F0FDFA;
+            --brand-teal-border: #99F6E4;
+
+            --accent-emerald: #059669;
+            --accent-emerald-bg: #ECFDF5;
+            --accent-emerald-border: #A7F3D0;
+
+            --accent-rose: #DC2626;
+            --accent-rose-bg: #FEF2F2;
+            --accent-rose-border: #FECACA;
+
+            --accent-amber: #D97706;
+            --accent-amber-bg: #FFFBEB;
+            --accent-amber-border: #FDE68A;
+
+            --border-color: #E2E8F0;
+            --border-highlight: #CBD5E1;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 0.9rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--brand-navy);
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .brand-icon {
+            background: var(--brand-navy);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-links { display: flex; gap: 1.25rem; align-items: center; }
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.45rem 0.85rem;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+        .nav-link:hover { color: var(--brand-navy); background: var(--bg-surface-subtle); }
+
+        .container { max-width: 1140px; margin: 2rem auto; padding: 0 1.5rem; flex: 1; width: 100%; }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--brand-teal-light);
+            color: var(--brand-teal);
+            padding: 0.35rem 0.95rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid var(--brand-teal-border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #F8FAFC;
+            border: 1px solid var(--border-color);
+            color: var(--brand-navy);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary { background: var(--brand-navy); color: white; box-shadow: var(--shadow-sm); }
+        .btn-primary:hover { background: var(--brand-navy-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: #FFFFFF; color: var(--brand-navy); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+        .btn-secondary:hover { background: var(--bg-surface-subtle); border-color: var(--border-highlight); }
+        .btn-danger { background: var(--accent-rose); color: white; box-shadow: var(--shadow-sm); }
+        .btn-danger:hover { background: #B91C1C; transform: translateY(-1px); }
+        .btn-success { background: var(--accent-emerald); color: white; box-shadow: var(--shadow-sm); }
+        .btn-success:hover { background: #047857; transform: translateY(-1px); }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; box-shadow: var(--shadow-sm); }
+        .card-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--brand-navy); }
+        .card-desc { color: var(--text-secondary); font-size: 0.92rem; line-height: 1.55; }
+
+        .sim-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+        .sim-rationale-box {
+            background: var(--brand-teal-light);
+            border: 1px solid var(--brand-teal-border);
+            border-radius: 6px;
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            color: var(--brand-navy);
+        }
+
+        .client-window { background: #FFFFFF; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; margin-bottom: 1.75rem; box-shadow: var(--shadow-sm); }
+        .client-toolbar { background: #F8FAFC; padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot-red { background: #ef4444; } .dot-yellow { background: #f59e0b; } .dot-green { background: #10b981; }
+        .client-title { margin-left: 0.5rem; font-size: 0.82rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .client-meta { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); background: #FAFAFA; }
+        .meta-row { display: flex; margin-bottom: 0.4rem; font-size: 0.92rem; }
+        .meta-label { width: 80px; color: var(--text-muted); font-weight: 600; }
+        .meta-value { color: var(--text-primary); }
+        .meta-subject { font-size: 1.15rem; font-weight: 700; margin-top: 0.4rem; color: var(--brand-navy); }
+        .client-content { padding: 1.75rem; font-size: 1rem; white-space: pre-line; line-height: 1.7; color: #1E293B; background: #FFFFFF; }
+
+        .sms-window { max-width: 480px; margin: 0 auto 1.75rem; border-radius: 12px; border: 1px solid var(--border-color); background: #FFFFFF; overflow: hidden; box-shadow: var(--shadow-md); }
+        .sms-header { background: #F8FAFC; padding: 0.9rem; text-align: center; border-bottom: 1px solid var(--border-color); }
+        .sms-sender { font-weight: 700; font-size: 0.95rem; color: var(--brand-navy); }
+        .sms-number { font-size: 0.8rem; color: var(--text-muted); }
+        .sms-bubble { background: #F1F5F9; color: var(--text-primary); padding: 1.15rem 1.25rem; border-radius: 12px; border-bottom-left-radius: 2px; margin: 1.5rem 1rem; font-size: 0.95rem; line-height: 1.55; border: 1px solid var(--border-color); }
+
+        .chat-window { background: #FFFFFF; border-radius: 8px; border: 1px solid var(--border-color); padding: 1.5rem; margin-bottom: 1.75rem; box-shadow: var(--shadow-sm); }
+        .chat-bubble { display: flex; gap: 1rem; align-items: flex-start; }
+        .chat-avatar { width: 42px; height: 42px; border-radius: 8px; background: var(--brand-navy); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .chat-body { background: #F8FAFC; padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); flex: 1; }
+        .chat-user { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.35rem; color: var(--brand-navy); }
+
+        .decision-bar { display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; background: #FFFFFF; padding: 1.25rem 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); flex-wrap: wrap; box-shadow: var(--shadow-sm); }
+        .timer-box { font-weight: 600; color: var(--text-secondary); font-size: 0.92rem; }
+
+        .feedback-banner { border-radius: 8px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1.25rem; }
+        .feedback-banner.success { background: var(--accent-emerald-bg); border: 1px solid var(--accent-emerald-border); color: #065F46; }
+        .feedback-banner.danger { background: var(--accent-rose-bg); border: 1px solid var(--accent-rose-border); color: #991B1B; }
+        .feedback-banner.warning { background: var(--accent-amber-bg); border: 1px solid var(--accent-amber-border); color: #92400E; }
+        .feedback-icon { font-size: 2.2rem; }
+        .feedback-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.2rem; }
+
+        .red-flags-box { background: var(--accent-rose-bg); border-left: 4px solid var(--accent-rose); border: 1px solid var(--accent-rose-border); border-left-width: 4px; padding: 1.15rem 1.35rem; border-radius: 6px; margin: 1.25rem 0; }
+        .red-flag-item { display: flex; gap: 0.6rem; margin-bottom: 0.45rem; color: #991B1B; font-size: 0.92rem; }
+        .bias-analysis-box { background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.35rem; margin: 1.25rem 0; box-shadow: var(--shadow-sm); }
+
+        .gauge-container { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .gauge-value { font-size: 3.2rem; font-weight: 800; line-height: 1; margin: 0.4rem 0; }
+        .risk-low { color: var(--accent-emerald); }
+        .risk-mid { color: var(--accent-amber); }
+        .risk-high { color: var(--accent-rose); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+        th { background: #F8FAFC; color: var(--text-secondary); font-weight: 600; padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); }
+        td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color); color: var(--text-primary); }
+        tr:hover td { background: #F8FAFC; }
+
+        footer { background: #FFFFFF; border-top: 1px solid var(--border-color); padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: auto; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="#section-drill" class="nav-brand">
+            <div class="brand-icon">🛡️</div>
+            <span>Threat Vector</span>
+        </a>
+        <div class="nav-links">
+            <a href="#section-drill" class="nav-link">⚡ Simulation Drill</a>
+            <a href="#section-radar" class="nav-link">📊 Risk Radar</a>
+            <a href="#section-training" class="nav-link">🎓 Training Hub</a>
+            <a href="#section-history" class="nav-link">📜 Audit Log</a>
+            <div class="metric-badge" id="offline-user-badge" style="cursor: pointer;" title="Click to customize your display name">
+                <span style="width: 8px; height: 8px; background: var(--accent-emerald); border-radius: 50%; display: inline-block;"></span>
+                <span id="offline-user-name">Ms. Dhriti Gupta</span> ✏️
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 2rem; padding: 1.75rem 1rem; background: #FFFFFF; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+            <span class="hero-badge" style="margin-bottom: 0.5rem;">Cybersecurity Intelligence & Awareness Platform</span>
+            <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--brand-navy); letter-spacing: -0.5px;">
+                Adaptive Social Engineering Threat Detection & Awareness
+            </h1>
+            <p style="color: var(--text-secondary); max-width: 800px; margin: 0 auto; font-size: 0.95rem;">
+                Candidate / Trainee: <strong id="header-user-name">Ms. Dhriti Gupta</strong> | Team: <strong>Threat Vector</strong>
+            </p>
+            <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.25rem;">
+                <a href="#section-drill" class="metric-badge" style="text-decoration: none; color: var(--brand-navy); border-color: var(--brand-navy);">⚡ 1. Drill Sandbox</a>
+                <a href="#section-feedback" id="nav-fb-link" class="metric-badge" style="text-decoration: none; display: none; color: var(--accent-emerald); border-color: var(--accent-emerald);">🔍 2. AI Feedback</a>
+                <a href="#section-radar" class="metric-badge" style="text-decoration: none;">📊 3. Risk Radar</a>
+                <a href="#section-training" class="metric-badge" style="text-decoration: none;">🎓 4. Training Hub</a>
+                <a href="#section-history" class="metric-badge" style="text-decoration: none;">📜 5. Audit Log</a>
+                <button id="btn-reset" class="metric-badge" style="cursor: pointer; background: transparent; color: var(--accent-rose); border-color: var(--accent-rose);">🔄 Reset Data</button>
+            </div>
+        </div>
+
+        <!-- 1. SIMULATION DRILL -->
+        <section id="section-drill" style="margin-bottom: 3rem;">
+            <div class="sim-header">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">
+                        🎯 Interactive Simulation Drill
+                        <span id="drill-id-badge" class="metric-badge">#1</span>
+                    </h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Examine the incoming communication and evaluate its authenticity.</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <span class="metric-badge">Channel: <strong id="drill-channel" style="color: #fff;">EMAIL</strong></span>
+                    <span class="metric-badge">Difficulty: <strong id="drill-diff" style="color: #fff;">Medium</strong></span>
+                </div>
+            </div>
+
+            <div id="rationale-box" class="sim-rationale-box">
+                <span style="font-size: 1.2rem;">🤖</span>
+                <span id="rationale-text"><strong>AI Recommendation:</strong> Initial Diagnostic: Establishing baseline vigilance.</span>
+            </div>
+
+            <div id="scenario-viewport"></div>
+
+            <div class="decision-bar">
+                <div class="timer-box">
+                    <span>⏱️ Reaction Stopwatch:</span>
+                    <span id="timer-display" style="color: var(--accent-cyan); font-family: monospace; font-size: 1.15rem;">0.0s</span>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <button id="btn-safe" class="btn btn-success">🛡️ Mark as Safe (Legitimate)</button>
+                    <button id="btn-threat" class="btn btn-danger">🚨 Report Threat (Social Engineering)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. EXPLAINABLE AI FEEDBACK (DYNAMIC) -->
+        <section id="section-feedback" style="display: none; margin-bottom: 3rem; scroll-margin-top: 80px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-size: 1.4rem; font-weight: 700; color: #fff;">🔍 Explainable AI Diagnostic Feedback</h2>
+                <button id="btn-next-drill" class="btn btn-primary" style="padding: 0.5rem 1.25rem;">Next Adaptive Drill ⚡</button>
+            </div>
+
+            <div id="fb-banner" class="feedback-banner">
+                <div id="fb-icon" class="feedback-icon">🛡️</div>
+                <div>
+                    <h3 id="fb-title" class="feedback-title">Verdict</h3>
+                    <p id="fb-desc">Description</p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                <div class="metric-badge">Your Decision: <strong id="fb-choice" style="color: #fff; margin-left: 4px;">-</strong></div>
+                <div class="metric-badge">Ground Truth: <strong id="fb-truth" style="color: #fff; margin-left: 4px;">-</strong></div>
+                <div class="metric-badge">Reaction Speed: <strong id="fb-time" style="color: #fff; margin-left: 4px;">-</strong></div>
+                <div class="metric-badge" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">
+                    ML Threat Confidence: <strong id="fb-confidence" style="color: #fff; margin-left: 4px;">-</strong>
+                </div>
+            </div>
+
+            <div id="fb-speed-box" class="sim-rationale-box" style="display: none; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #f59e0b;">
+                <span>⚡ <strong>Cognitive Timing Insight:</strong> <span id="fb-speed-text"></span></span>
+            </div>
+
+            <div class="bias-analysis-box" style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <h4 id="fb-bias-title" style="font-size: 1.15rem; font-weight: 700; color: #fff;">🧠 Attack Vector</h4>
+                    <span id="fb-cat-badge" class="metric-badge" style="color: var(--accent-cyan); border-color: var(--accent-cyan);">URGENCY</span>
+                </div>
+                <p id="fb-bias-desc" style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 0.75rem;"></p>
+                <div style="background: rgba(30, 41, 59, 0.6); padding: 0.75rem 1rem; border-radius: 8px; border-left: 3px solid var(--accent-cyan);">
+                    <strong style="color: var(--accent-cyan);">Defense Protocol:</strong>
+                    <span id="fb-bias-defense" style="color: #e2e8f0; font-size: 0.9rem;"></span>
+                </div>
+            </div>
+
+            <div id="fb-redflags-box" class="red-flags-box" style="display: none; margin-bottom: 1.25rem;">
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #f43f5e; margin-bottom: 0.5rem;">🚩 Detected Red Flags:</h4>
+                <div id="fb-redflags-list"></div>
+            </div>
+
+            <div class="card">
+                <h4 style="color: var(--accent-cyan); font-size: 1.1rem; margin-bottom: 0.5rem;">Explainable AI Analysis</h4>
+                <p id="fb-explanation" style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1rem;"></p>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 0.85rem 1rem;">
+                    <strong style="color: var(--accent-emerald);">💡 Key Takeaway (Micro-Lesson):</strong>
+                    <p id="fb-microlesson" style="color: #e2e8f0; font-size: 0.95rem; margin-top: 0.25rem;"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. RISK PROFILE & RADAR -->
+        <section id="section-radar" style="margin-bottom: 3rem; scroll-margin-top: 80px;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">📊 Cognitive Risk Profile & Visual Analytics</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Real-time assessment of individual cognitive attack vulnerabilities.</p>
+            </div>
+
+            <div class="cards-grid" style="margin-bottom: 1.5rem;">
+                <div class="card gauge-container">
+                    <div class="card-desc" style="text-transform: uppercase; font-size: 0.75rem;">Composite Risk Score</div>
+                    <div id="gauge-val" class="gauge-value risk-mid">50.0</div>
+                    <div id="gauge-sub" class="card-desc" style="margin-top: 0.4rem;">Baseline (Unrated)</div>
+                </div>
+                <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card-desc" style="text-transform: uppercase; font-size: 0.75rem; color: var(--accent-rose);">Identified Weakness Focus</div>
+                    <div id="weakness-val" style="font-size: 1.35rem; font-weight: 700; color: #fff; margin: 0.5rem 0;">Baseline (Not yet evaluated)</div>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">The AI recommender targets future drills to strengthen this vector.</p>
+                </div>
+                <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+                    <div class="card-desc" style="text-transform: uppercase; font-size: 0.75rem;">Threat Detection Accuracy</div>
+                    <div id="acc-val" style="font-size: 2rem; font-weight: 800; color: var(--accent-cyan); margin: 0.5rem 0;">0.0%</div>
+                    <div id="total-tests-sub" style="color: var(--text-secondary); font-size: 0.85rem;">Based on <strong>0</strong> drills.</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+                <div class="card">
+                    <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 1rem;">Cognitive Vulnerability Radar</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title" style="font-size: 1.1rem; margin-bottom: 1rem;">Vector Vulnerability Breakdown</h3>
+                    <div id="vector-bars"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. TRAINING HUB -->
+        <section id="section-training" style="margin-bottom: 3rem; scroll-margin-top: 80px;">
+            <div style="margin-bottom: 1.5rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; color: #fff;">🎓 Targeted Micro-Learning Training Hub</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Practice specific persuasion tactics on demand.</p>
+            </div>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h3 class="card-title">Urgency & Time Limits</h3>
+                    <p class="card-desc" style="margin-bottom: 0.75rem;">Artificial countdowns induce panic to bypass logical reasoning.</p>
+                    <button class="btn btn-secondary btn-drill-cat" data-cat="URGENCY" style="width: 100%; font-size: 0.85rem;">🎯 Practice Urgency Drill</button>
+                </div>
+                <div class="card">
+                    <div class="card-icon">👔</div>
+                    <h3 class="card-title">Authority Impersonation</h3>
+                    <p class="card-desc" style="margin-bottom: 0.75rem;">Impersonating deans, executives, or IT leads with urgent requests.</p>
+                    <button class="btn btn-secondary btn-drill-cat" data-cat="AUTHORITY" style="width: 100%; font-size: 0.85rem;">🎯 Practice Authority Drill</button>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔗</div>
+                    <h3 class="card-title">Fake Links & Smishing</h3>
+                    <p class="card-desc" style="margin-bottom: 0.75rem;">Typosquatting domains (.xyz/.top) and courier delivery traps.</p>
+                    <button class="btn btn-secondary btn-drill-cat" data-cat="FAKELINKS" style="width: 100%; font-size: 0.85rem;">🎯 Practice Link Drill</button>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🎁</div>
+                    <h3 class="card-title">Incentive Traps</h3>
+                    <p class="card-desc" style="margin-bottom: 0.75rem;">Free technology stipends and vouchers to steal banking secrets.</p>
+                    <button class="btn btn-secondary btn-drill-cat" data-cat="INCENTIVE" style="width: 100%; font-size: 0.85rem;">🎯 Practice Incentive Drill</button>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚠️</div>
+                    <h3 class="card-title">Coercion & Intimidation</h3>
+                    <p class="card-desc" style="margin-bottom: 0.75rem;">Legal action or suspension threats coercing dangerous file downloads.</p>
+                    <button class="btn btn-secondary btn-drill-cat" data-cat="COERCION" style="width: 100%; font-size: 0.85rem;">🎯 Practice Coercion Drill</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. AUDIT LOG -->
+        <section id="section-history" style="margin-bottom: 3rem; scroll-margin-top: 80px;">
+            <div class="card">
+                <h3 class="card-title" style="margin-bottom: 1rem;">📜 Simulation Drill Audit Log</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-muted);">
+                                <th style="padding: 0.75rem;">Scenario Title</th>
+                                <th style="padding: 0.75rem;">Vector</th>
+                                <th style="padding: 0.75rem;">Decision</th>
+                                <th style="padding: 0.75rem;">Result</th>
+                                <th style="padding: 0.75rem;">Reaction Time</th>
+                                <th style="padding: 0.75rem;">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-rows">
+                            <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No attempts recorded yet. Take the drill above to begin!</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p><strong>Threat Vector</strong> — AI-Based Adaptive Social Engineering Threat Detection & Awareness System</p>
+        <p style="margin-top: 0.35rem; color: var(--text-muted);">Active Candidate / Trainee: <strong id="footer-user-name">Ms. Dhriti Gupta</strong> | Client-Side & Live Model Ready</p>
+    </footer>
+
+    <!-- EMBEDDED SCENARIOS DATASET & AI LOGIC -->
+    <script>
+        const SCENARIOS = [
+            {
+                id: 1, category_code: "URGENCY", channel: "email",
+                title: "Immediate Action Required: Account Deactivation Notice",
+                sender: "portal-support@campus-security-auth.net", sender_name: "University IT Service Desk",
+                subject: "CRITICAL: Student Portal will be terminated within 2 hours",
+                body: "Dear Student,\n\nOur system detected multiple failed login attempts on your institutional account. To maintain campus network integrity, your account is scheduled for automatic permanent deactivation in 120 minutes.\n\nYou must immediately authenticate your credentials to cancel this termination order:\n\n👉 https://campus-security-auth.net/emergency-verify?user=student\n\nFailure to act promptly will result in complete loss of academic records and email access.\n\nRegards,\nIT Operations & Security Taskforce",
+                is_threat: true, difficulty: "medium",
+                red_flags: [
+                    "Artificial time limit ('within 2 hours') designed to induce panic and prevent critical thinking.",
+                    "Mismatched sender domain ('campus-security-auth.net' instead of official university .edu/.ac domain).",
+                    "Severe penalty threat ('complete loss of academic records') for not clicking."
+                ],
+                explanation: "This attack leverages Urgency and Fear heuristics. Cybercriminals deliberately create artificial time pressure (a 2-hour deadline) to trigger panic, causing victims to bypass logical scrutiny and click the credential-harvesting link.",
+                micro_lesson: "Authentic IT departments never set a 2-hour deadline for account termination via an unsolicited link. Always navigate directly to your institution's portal by typing the official URL into your browser."
+            },
+            {
+                id: 2, category_code: "AUTHORITY", channel: "email",
+                title: "Confidential Request from Office of the Dean",
+                sender: "dean.office.academics@gmail.com", sender_name: "Dr. R. K. Sharma (Dean of Student Affairs)",
+                subject: "CONFIDENTIAL: Urgent administrative assistance needed",
+                body: "Hello,\n\nI am currently in an executive committee meeting with the university board and cannot take phone calls. I need you to assist me with a time-sensitive administrative task regarding faculty honorarium vouchers.\n\nPlease purchase five $100 Apple or Google Play gift cards and reply with the scanned scratch-off codes right away. The university finance office will reimburse you on Monday morning with full official receipts.\n\nPlease keep this strictly between us until the meeting concludes.\n\nDr. R. K. Sharma\nDean of Student Affairs",
+                is_threat: true, difficulty: "easy",
+                red_flags: [
+                    "Public email provider ('@gmail.com') used instead of institutional email address.",
+                    "Executive impersonation requesting gift cards (a classic unrecoverable funds scam).",
+                    "Excuse for inability to verify ('in a committee meeting, cannot take calls')."
+                ],
+                explanation: "This attack relies heavily on Authority Bias. When an email appears to originate from leadership (the Dean), individuals often feel compelled to comply without question. High-profile figures never ask students to buy gift cards.",
+                micro_lesson: "No legitimate executive, professor, or dean will ever ask you to purchase gift cards. Always check the sender's actual email address, not just the display name."
+            },
+            {
+                id: 3, category_code: "FAKELINKS", channel: "sms",
+                title: "Package Delivery Exception Alert",
+                sender: "+1 (844) 923-4412", sender_name: "Global Express Logistics",
+                subject: "SMS Notification",
+                body: "[Global Logistics Alert]: Your parcel #GL-88492 cannot be delivered due to an incorrect apartment number. A redelivery fee of $1.50 is required to prevent return to sender. Update your address & settle the fee here: http://fedx-parcel-redirection.top/retrack/88492",
+                is_threat: true, difficulty: "medium",
+                red_flags: [
+                    "Smishing (SMS phishing) attempt with unknown phone number.",
+                    "Suspicious domain name ('fedx-parcel-redirection.top') with uncommon top-level domain (.top) impersonating FedEx.",
+                    "Micro-charge trap ($1.50 fee) designed to steal full credit card details and CVV."
+                ],
+                explanation: "This is a Smishing (SMS phishing) attack using Typosquatting and fake links. The attacker mimics a courier and requests a tiny fee ($1.50) so victims lower their guard, while the malicious page captures banking credentials.",
+                micro_lesson: "Never click tracking links sent via unsolicited SMS. Visit the official courier website directly and enter your tracking number into their official search bar."
+            },
+            {
+                id: 4, category_code: "INCENTIVE", channel: "email",
+                title: "Selected for Academic Excellence Grant & Technology Stipend",
+                sender: "rewards@academic-stipend-foundation.org", sender_name: "National Merit Foundation",
+                subject: "CONGRATULATIONS: You have won a $1,200 Student Tech Grant",
+                body: "Dear Applicant,\n\nWe are pleased to inform you that your profile has been selected for the 2026 National Student Technology Subsidy ($1,200 Laptop & Equipment Grant).\n\nTo accept and deposit this grant directly to your bank account, claim your token within 24 hours:\n\n➡️ Claim Your Award: https://academic-stipend-foundation.org/claim?id=9491\n\nNo repayment required. Only 15 grants left in your regional district.",
+                is_threat: true, difficulty: "easy",
+                red_flags: [
+                    "Unsolicited financial award for a program you never applied to.",
+                    "Artificial scarcity ('Only 15 grants left in your district').",
+                    "Direct solicitation of banking details under the guise of an award payout."
+                ],
+                explanation: "This attack targets the Greed / Incentive vulnerability. It exploits financial desire by offering free money. Legitimate scholarships do not send unsolicited grants requiring immediate bank account entry via external links.",
+                micro_lesson: "If you did not apply for a scholarship, grant, or lottery, you did not win it. Treat unsolicited monetary offers as phishing attempts."
+            },
+            {
+                id: 5, category_code: "COERCION", channel: "email",
+                title: "Notice of Academic Integrity Infraction & Disciplinary Hearing",
+                sender: "disciplinary-board@univ-judicial-investigation.com", sender_name: "Academic Integrity Board",
+                subject: "LEGAL NOTICE: Formal allegations of examination malpractice",
+                body: "STUDENT SUMMONS:\n\nA formal complaint has been lodged alleging copyright and code plagiarism in your recent laboratory submission. If substantiated, this carries mandatory semester suspension.\n\nYou have been summoned for a digital hearing. You must download the evidence brief and case docket immediately to prepare your defense:\n\n📂 Download Case_Evidence_Docket.pdf.exe\n\nFailure to respond within 24 hours will result in automatic expulsion without appeal.",
+                is_threat: true, difficulty: "hard",
+                red_flags: [
+                    "Severe intimidation and legal coercion designed to provoke panic.",
+                    "Double extension file masquerading as a PDF ('Case_Evidence_Docket.pdf.exe') containing executable malware.",
+                    "Unrecognized third-party domain ('univ-judicial-investigation.com')."
+                ],
+                explanation: "This attack utilizes Fear and Coercion. By threatening academic expulsion, the attacker induces terror so the victim recklessly downloads an executable malware payload disguised as a PDF document ('pdf.exe').",
+                micro_lesson: "Look closely at file attachments. An attachment ending in '.exe', '.vbs', or '.scr' is a program, not a document, regardless of the filename or PDF icon."
+            },
+            {
+                id: 6, category_code: "LEGITIMATE", channel: "email",
+                title: "Monthly University Library & Research Resource Newsletter",
+                sender: "library-services@university.edu", sender_name: "University Central Library",
+                subject: "Campus Library Digest: New IEEE & ACM Digital Access Hours",
+                body: "Hello Campus Community,\n\nWe are pleased to announce extended library hours for the upcoming mid-semester examination week. The digital repository now includes updated access to ACM and IEEE computer science transactions.\n\nKey updates:\n- Main Reading Hall open 24/7 with valid Student ID tap.\n- Research consultations available every Tuesday.\n\nYou can view full catalog listings by searching directly on the library portal at https://library.university.edu.\n\nWarm regards,\nUniversity Library Services",
+                is_threat: false, difficulty: "easy",
+                red_flags: [],
+                explanation: "This is a legitimate university communication. The sender domain matches the official institution domain (.edu), there is no coercive language, no urgent deadline, no request for credentials or money, and the URL points to the genuine campus domain.",
+                micro_lesson: "Legitimate communications provide general information, refer you to standard resources, and do not use high-pressure tactics or ask for sensitive secrets."
+            },
+            {
+                id: 7, category_code: "URGENCY", channel: "chat",
+                title: "Urgent IT Helpdesk Ping: VPN Session Expiring",
+                sender: "@helpdesk-admin_bot", sender_name: "IT Helpdesk QuickBot",
+                subject: "Slack / Teams Direct Message",
+                body: "Hey there! We are pushing a critical security patch to all campus VPN tunnels right now. If you don't approve the DUO two-factor push notification within 60 seconds, your workstation connection will be terminated and unsaved work will be lost. Please click 'Approve' on your phone now!",
+                is_threat: true, difficulty: "hard",
+                red_flags: [
+                    "MFA fatigue / prompt bombing attempt via chat.",
+                    "Extreme urgency window ('within 60 seconds').",
+                    "Coercion via fear of losing unsaved work."
+                ],
+                explanation: "This is an MFA (Multi-Factor Authentication) fatigue attack combined with Urgency. The attacker has obtained the password and is trying to coerce the victim into blindly approving a 2FA prompt.",
+                micro_lesson: "Never approve an MFA or 2FA prompt that you did not personally trigger seconds before. Prompt approval requests via unsolicited chat are a major red flag."
+            },
+            {
+                id: 8, category_code: "LEGITIMATE", channel: "email",
+                title: "Campus Career Fair Registration Confirmation",
+                sender: "career-placement@university.edu", sender_name: "Office of Career Services",
+                subject: "Confirmation: Annual Tech Internship Fair - Booth Directory",
+                body: "Dear Dhriti,\n\nThank you for registering for the Annual Tech Career Fair on October 14th in the Main Gymnasium.\n\nPlease remember to bring 5 printed copies of your resume and your student ID card for entry at the registration desk. No advance payment or registration confirmation fee is required.\n\nYou can review participating employers on our official student placement portal at https://careers.university.edu/fair-2026.\n\nBest regards,\nCareer Services Team",
+                is_threat: false, difficulty: "easy",
+                red_flags: [],
+                explanation: "This is a legitimate institutional confirmation. It uses authentic university domain addresses, does not solicit private credentials or payment, and contains standard logistical information.",
+                micro_lesson: "Official communications verify your existing registrations without asking you for unexpected payments, gift cards, or immediate password entries."
+            }
+        ];
+
+        const BIAS_INFO = {
+            "URGENCY": { title: "Urgency & Time Compression Bias", description: "Attackers exploit panic and artificial deadlines so you bypass critical evaluation.", defense: "Pause immediately. Genuine administrative or security issues are never resolved solely through a countdown link." },
+            "AUTHORITY": { title: "Authority & Hierarchical Compliance", description: "Attackers disguise themselves as leaders or deans to exploit natural deference.", defense: "Check the raw sender email header. Never buy gift cards or transfer money based only on email." },
+            "FAKELINKS": { title: "Lookalike Domains & Visual Deception", description: "Attackers craft lookalike URLs (.xyz/.top) or smishing links to steal credentials.", defense: "Hover over hyperlinks and never follow links in unsolicited SMS messages." },
+            "INCENTIVE": { title: "Incentive / Greed Bias", description: "Offers of free technology grants or prizes lure victims into entering banking details.", defense: "If you did not apply for an award, grant, or lottery, you did not win it." },
+            "COERCION": { title: "Fear, Intimidation & Coercion", description: "Threatens legal action or academic expulsion to coerce risky downloads.", defense: "Verify in person or by phone. Never execute .exe or double-extension files (.pdf.exe) sent via email." },
+            "LEGITIMATE": { title: "Authentic Institutional Communication", description: "Legitimate communication with verified domain headers and standard informational guidance.", defense: "Maintain healthy vigilance while recognizing authentic institutional notices." }
+        };
+
+        const CATEGORIES = ['URGENCY', 'AUTHORITY', 'FAKELINKS', 'INCENTIVE', 'COERCION'];
+        const CAT_LABELS = ['⚡ Urgency', '👔 Authority', '🔗 Fake Links', '🎁 Incentive', '⚠️ Coercion'];
+
+        // State Management
+        let attempts = JSON.parse(localStorage.getItem('tv_attempts') || '[]');
+        let currentScenarioIndex = 0;
+        let startTime = Date.now();
+        let timerInterval = null;
+        let radarChart = null;
+
+        // Elements
+        const viewport = document.getElementById('scenario-viewport');
+        const drillIdBadge = document.getElementById('drill-id-badge');
+        const drillChannel = document.getElementById('drill-channel');
+        const drillDiff = document.getElementById('drill-diff');
+        const rationaleText = document.getElementById('rationale-text');
+        const timerDisplay = document.getElementById('timer-display');
+        const btnSafe = document.getElementById('btn-safe');
+        const btnThreat = document.getElementById('btn-threat');
+        const secFb = document.getElementById('section-feedback');
+        const navFbLink = document.getElementById('nav-fb-link');
+        const fbBanner = document.getElementById('fb-banner');
+        const fbIcon = document.getElementById('fb-icon');
+        const fbTitle = document.getElementById('fb-title');
+        const fbDesc = document.getElementById('fb-desc');
+        const fbChoice = document.getElementById('fb-choice');
+        const fbTruth = document.getElementById('fb-truth');
+        const fbTime = document.getElementById('fb-time');
+        const fbConfidence = document.getElementById('fb-confidence');
+        const fbSpeedBox = document.getElementById('fb-speed-box');
+        const fbSpeedText = document.getElementById('fb-speed-text');
+        const fbBiasTitle = document.getElementById('fb-bias-title');
+        const fbCatBadge = document.getElementById('fb-cat-badge');
+        const fbBiasDesc = document.getElementById('fb-bias-desc');
+        const fbBiasDefense = document.getElementById('fb-bias-defense');
+        const fbRedflagsBox = document.getElementById('fb-redflags-box');
+        const fbRedflagsList = document.getElementById('fb-redflags-list');
+        const fbExplanation = document.getElementById('fb-explanation');
+        const fbMicrolesson = document.getElementById('fb-microlesson');
+        const btnNextDrill = document.getElementById('btn-next-drill');
+        const gaugeVal = document.getElementById('gauge-val');
+        const gaugeSub = document.getElementById('gauge-sub');
+        const weaknessVal = document.getElementById('weakness-val');
+        const accVal = document.getElementById('acc-val');
+        const totalTestsSub = document.getElementById('total-tests-sub');
+        const vectorBars = document.getElementById('vector-bars');
+        const historyRows = document.getElementById('history-rows');
+        const btnReset = document.getElementById('btn-reset');
+
+        // Dynamic Active User for Standalone Model
+        let currentUserName = localStorage.getItem('tv_username') || 'Ms. Dhriti Gupta';
+        function updateDisplayedUserName() {
+            const b = document.getElementById('offline-user-name');
+            const h = document.getElementById('header-user-name');
+            const f = document.getElementById('footer-user-name');
+            if (b) b.textContent = currentUserName;
+            if (h) h.textContent = currentUserName;
+            if (f) f.textContent = currentUserName;
+        }
+        updateDisplayedUserName();
+
+        const badgeElem = document.getElementById('offline-user-badge');
+        if (badgeElem) {
+            badgeElem.addEventListener('click', () => {
+                const nameInput = prompt('Enter your name for this training session:', currentUserName);
+                if (nameInput && nameInput.trim()) {
+                    currentUserName = nameInput.trim();
+                    localStorage.setItem('tv_username', currentUserName);
+                    updateDisplayedUserName();
+                    renderScenario(SCENARIOS[currentScenarioIndex], rationaleText.textContent.replace('AI Recommendation:', '').trim());
+                }
+            });
+        }
+
+        // Timer
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const el = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerDisplay.textContent = `${el}s`;
+            }, 100);
+        }
+
+        // Render Scenario
+        function renderScenario(sc, rationale) {
+            drillIdBadge.textContent = `#${sc.id}`;
+            drillChannel.textContent = sc.channel.toUpperCase();
+            drillDiff.textContent = sc.difficulty;
+            rationaleText.innerHTML = `<strong>AI Recommendation:</strong> ${rationale}`;
+
+            const cleanEmailUser = currentUserName.toLowerCase().replace(/[^a-z0-9]/g, '.') || 'trainee';
+
+            let html = '';
+            if (sc.channel === 'email') {
+                html = `
+                    <div class="client-window">
+                        <div class="client-toolbar">
+                            <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+                            <span class="client-title">Mail Client — Inbox Preview</span>
+                        </div>
+                        <div class="client-meta">
+                            <div class="meta-row"><span class="meta-label">From:</span><span class="meta-value"><strong>${sc.sender_name}</strong> &lt;${sc.sender}&gt;</span></div>
+                            <div class="meta-row"><span class="meta-label">To:</span><span class="meta-value">${cleanEmailUser}@organization-portal.edu</span></div>
+                            <div class="meta-subject">${sc.subject}</div>
+                        </div>
+                        <div class="client-content">${sc.body}</div>
+                    </div>
+                `;
+            } else if (sc.channel === 'sms') {
+                html = `
+                    <div class="sms-window">
+                        <div class="sms-header">
+                            <div class="sms-sender">${sc.sender_name}</div>
+                            <div class="sms-number">${sc.sender}</div>
+                        </div>
+                        <div class="sms-bubble">${sc.body}</div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="chat-window">
+                        <div class="chat-bubble">
+                            <div class="chat-avatar">🤖</div>
+                            <div class="chat-body">
+                                <div class="chat-user">${sc.sender_name} (${sc.sender})</div>
+                                <div style="font-size: 1rem; color: #e2e8f0; white-space: pre-line;">${sc.body}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            viewport.innerHTML = html;
+            btnSafe.disabled = false;
+            btnThreat.disabled = false;
+            btnSafe.style.opacity = '1';
+            btnThreat.style.opacity = '1';
+            startTimer();
+        }
+
+        // Profile Calculation
+        function calculateProfile() {
+            if (!attempts.length) {
+                return { score: 50.0, weakness: 'Baseline (Not yet evaluated)', accuracy: 0.0, total: 0, level: 'Baseline (Unrated)', stats: {} };
+            }
+
+            const total = attempts.length;
+            const correct = attempts.filter(a => a.is_correct).length;
+            const accuracy = ((correct / total) * 100).toFixed(1);
+
+            let stats = {};
+            CATEGORIES.forEach(c => {
+                const cAttempts = attempts.filter(a => a.category === c);
+                if (cAttempts.length) {
+                    const failed = cAttempts.filter(a => !a.is_correct).length;
+                    const vuln = Math.round((failed / cAttempts.length) * 100);
+                    stats[c] = { total: cAttempts.length, failed, vuln };
+                } else {
+                    stats[c] = { total: 0, failed: 0, vuln: 0 };
+                }
+            });
+
+            // Find worst vector
+            let worstCat = 'High Vigilance';
+            let maxVuln = -1;
+            CATEGORIES.forEach(c => {
+                if (stats[c] && stats[c].vuln > maxVuln && stats[c].total > 0) {
+                    maxVuln = stats[c].vuln;
+                    worstCat = c;
+                }
+            });
+            if (maxVuln === 0) worstCat = 'High Vigilance (No major weakness)';
+
+            // Score formula
+            let sum = 0, count = 0;
+            CATEGORIES.forEach(c => {
+                sum += (stats[c] ? stats[c].vuln : 0);
+                count++;
+            });
+            let rawScore = Math.round(sum / count);
+            let score = Math.min(100, Math.max(0, rawScore + (100 - accuracy) * 0.3));
+            score = Math.round(score * 10) / 10;
+
+            let level = score < 30 ? 'Low Risk (Vigilant 🛡️)' : (score < 65 ? 'Moderate Risk (Cautious ⚠️)' : 'High Risk (Vulnerable 🚨)');
+
+            return { score, weakness: worstCat, accuracy, total, level, stats };
+        }
+
+        // Update UI
+        function updateUI() {
+            const prof = calculateProfile();
+            gaugeVal.textContent = prof.score;
+            gaugeVal.className = `gauge-value ${prof.score < 30 ? 'risk-low' : (prof.score < 65 ? 'risk-mid' : 'risk-high')}`;
+            gaugeSub.textContent = prof.level;
+            weaknessVal.textContent = prof.weakness;
+            accVal.textContent = `${prof.accuracy}%`;
+            totalTestsSub.innerHTML = `Based on <strong>${prof.total}</strong> drills.`;
+
+            // Radar
+            const values = CATEGORIES.map(c => (prof.stats[c] ? prof.stats[c].vuln : 0));
+            if (!radarChart) {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: CAT_LABELS,
+                        datasets: [{
+                            label: 'Cognitive Vulnerability (%)',
+                            data: values,
+                            backgroundColor: 'rgba(6, 182, 212, 0.25)',
+                            borderColor: '#06b6d4',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#06b6d4'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                pointLabels: { color: '#9ca3af', font: { size: 11, weight: '600' } },
+                                ticks: { backdropColor: 'transparent', color: '#6b7280', min: 0, max: 100, stepSize: 25 }
+                            }
+                        },
+                        plugins: { legend: { labels: { color: '#f3f4f6' } } }
+                    }
+                });
+            } else {
+                radarChart.data.datasets[0].data = values;
+                radarChart.update();
+            }
+
+            // Vector Bars
+            let barsHtml = '';
+            CATEGORIES.forEach(c => {
+                const st = prof.stats[c] || { vuln: 0 };
+                const color = st.vuln > 50 ? 'var(--accent-rose)' : (st.vuln > 20 ? 'var(--accent-amber)' : 'var(--accent-emerald)');
+                barsHtml += `
+                    <div style="margin-bottom: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+                            <span>${c}</span>
+                            <strong style="color: ${color};">${st.vuln}% Vulnerability</strong>
+                        </div>
+                        <div style="height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: ${st.vuln}%; background: ${color}; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            vectorBars.innerHTML = barsHtml;
+
+            // History
+            if (attempts.length) {
+                let hHtml = '';
+                [...attempts].reverse().forEach(a => {
+                    hHtml += `
+                        <tr style="border-bottom: 1px solid var(--border-color);">
+                            <td style="padding: 0.75rem; color: #fff;">${a.title}</td>
+                            <td style="padding: 0.75rem;"><span class="metric-badge" style="font-size: 0.75rem;">${a.category}</span></td>
+                            <td style="padding: 0.75rem;">${a.choice ? 'Threat' : 'Safe'}</td>
+                            <td style="padding: 0.75rem;">
+                                <span style="color: ${a.is_correct ? 'var(--accent-emerald)' : 'var(--accent-rose)'}; font-weight: 600;">
+                                    ${a.is_correct ? '✓ Correct' : '✗ Vulnerable'}
+                                </span>
+                            </td>
+                            <td style="padding: 0.75rem;">${a.time}s</td>
+                            <td style="padding: 0.75rem; color: var(--text-muted); font-size: 0.8rem;">${a.date}</td>
+                        </tr>
+                    `;
+                });
+                historyRows.innerHTML = hHtml;
+            } else {
+                historyRows.innerHTML = `<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No attempts recorded yet.</td></tr>`;
+            }
+        }
+
+        // Decision logic
+        function submitDecision(userChoice) {
+            clearInterval(timerInterval);
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            const sc = SCENARIOS[currentScenarioIndex];
+            const isCorrect = (userChoice === sc.is_threat);
+
+            // Record Attempt
+            const now = new Date();
+            const dateStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            attempts.push({
+                title: sc.title,
+                category: sc.category_code,
+                choice: userChoice,
+                is_correct: isCorrect,
+                time: elapsed,
+                date: dateStr
+            });
+            localStorage.setItem('tv_attempts', JSON.stringify(attempts));
+
+            // Display Feedback
+            secFb.style.display = 'block';
+            navFbLink.style.display = 'inline-flex';
+
+            let status = isCorrect ? 'success' : (sc.is_threat ? 'danger' : 'warning');
+            fbBanner.className = `feedback-banner ${status}`;
+            fbIcon.textContent = status === 'success' ? '🛡️' : (status === 'danger' ? '🚨' : '⚠️');
+            fbTitle.textContent = isCorrect
+                ? (sc.is_threat ? 'Spot On! Threat Neutralized 🛡️' : 'Correctly Verified as Safe ✅')
+                : (sc.is_threat ? 'Vulnerability Exploited! Attack Succeeded 🚨' : 'False Positive Alert ⚠️');
+            fbDesc.textContent = isCorrect
+                ? 'Your critical analysis successfully detected the authentic nature of this communication.'
+                : 'This scenario successfully bypassed your defenses. Review the diagnostic breakdown below.';
+
+            fbChoice.textContent = userChoice ? 'Reported as Threat' : 'Marked as Safe';
+            fbTruth.textContent = sc.is_threat ? 'Malicious Attack' : 'Legitimate Notice';
+            fbTime.textContent = `${elapsed}s`;
+            fbConfidence.textContent = sc.is_threat ? '94.8%' : '3.2%';
+
+            if (elapsed < 4.0 && !isCorrect) {
+                fbSpeedBox.style.display = 'flex';
+                fbSpeedText.textContent = 'Impulsive response in under 4 seconds! Attackers rely on fast, uncritical clicking.';
+            } else {
+                fbSpeedBox.style.display = 'none';
+            }
+
+            const bias = BIAS_INFO[sc.category_code] || BIAS_INFO["URGENCY"];
+            fbBiasTitle.textContent = `🧠 Attack Vector: ${bias.title}`;
+            fbCatBadge.textContent = sc.category_code;
+            fbBiasDesc.textContent = bias.description;
+            fbBiasDefense.textContent = bias.defense;
+
+            if (sc.red_flags && sc.red_flags.length) {
+                fbRedflagsBox.style.display = 'block';
+                fbRedflagsList.innerHTML = sc.red_flags.map(f => `<div class="red-flag-item"><span>⚠️</span><span>${f}</span></div>`).join('');
+            } else {
+                fbRedflagsBox.style.display = 'none';
+            }
+
+            fbExplanation.textContent = sc.explanation;
+            fbMicrolesson.textContent = sc.micro_lesson;
+
+            updateUI();
+            secFb.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        btnSafe.addEventListener('click', () => submitDecision(false));
+        btnThreat.addEventListener('click', () => submitDecision(true));
+
+        // Adaptive Selection
+        function pickNextAdaptive() {
+            const prof = calculateProfile();
+            let nextIndex = 0;
+            let rationale = 'Initial Diagnostic: Establishing baseline vigilance.';
+
+            if (prof.weakness && prof.weakness !== 'Baseline (Not yet evaluated)' && prof.weakness !== 'High Vigilance (No major weakness)') {
+                // Find scenario matching weakness
+                const matchIndex = SCENARIOS.findIndex(s => s.category_code === prof.weakness && s.id !== SCENARIOS[currentScenarioIndex].id);
+                if (matchIndex !== -1) {
+                    nextIndex = matchIndex;
+                    rationale = `Adaptive AI Recommendation: Targeted Drill on '${prof.weakness}'. Elevated vulnerability detected on this vector.`;
+                } else {
+                    nextIndex = (currentScenarioIndex + 1) % SCENARIOS.length;
+                    rationale = `Adaptive Retention Test on '${SCENARIOS[nextIndex].category_code}'.`;
+                }
+            } else {
+                nextIndex = (currentScenarioIndex + 1) % SCENARIOS.length;
+                rationale = `Continuous Awareness: Testing vigilance against '${SCENARIOS[nextIndex].category_code}'.`;
+            }
+
+            currentScenarioIndex = nextIndex;
+            renderScenario(SCENARIOS[currentScenarioIndex], rationale);
+            document.getElementById('section-drill').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        btnNextDrill.addEventListener('click', pickNextAdaptive);
+
+        // Category drill buttons in training hub
+        document.querySelectorAll('.btn-drill-cat').forEach(b => {
+            b.addEventListener('click', () => {
+                const cat = b.dataset.cat;
+                const idx = SCENARIOS.findIndex(s => s.category_code === cat);
+                if (idx !== -1) {
+                    currentScenarioIndex = idx;
+                    renderScenario(SCENARIOS[idx], `Focused Practice Drill targeting '${cat}' psychological vector.`);
+                    document.getElementById('section-drill').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Reset
+        btnReset.addEventListener('click', () => {
+            if (!confirm('Reset all attempts and restart baseline?')) return;
+            attempts = [];
+            localStorage.removeItem('tv_attempts');
+            secFb.style.display = 'none';
+            navFbLink.style.display = 'none';
+            currentScenarioIndex = 0;
+            renderScenario(SCENARIOS[0], 'Baseline Diagnostic: Establishing baseline vigilance.');
+            updateUI();
+        });
+
+        // Initial Boot
+        renderScenario(SCENARIOS[0], 'Initial Diagnostic: Establishing your baseline cybersecurity vigilance.');
+        updateUI();
+    </script>
+</body>
+</html>
